@@ -21,6 +21,6 @@ resource "null_resource" "local_kubectl_setup" {
 
 resource "local_file" "kubeconfig" {
   content    = module.eks.kubeconfig
-  filename   = "/root/.kube/config" # Explicitly write to root's kubeconfig
+  filename   = "/root/.kube/config"
   depends_on = [null_resource.local_kubectl_setup]
 }
