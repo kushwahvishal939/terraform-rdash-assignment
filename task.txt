@@ -1,0 +1,33 @@
+task1-
+    vpc
+        vpc cidr, name 
+    subnet
+        pub private db cache 
+    gateways
+        nat gateways internat gateways
+    route tables
+        pub private 
+additional things- region , dyanamic , env , mutlti az 
+
+modules 
+    vpc 
+        main.tf output.tf variable.tf
+
+root directory
+    main.tf variable.tf output.tf prod.fvars
+
+readme 
+    git pull
+    terraform init
+    aws secrets 
+    t plan -var-file=filename
+    t apply -var-file=filename
+
+
+    variable region zones subnet_az cidrs 
+
+
+task2
+task3
+task4
+task5
