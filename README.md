@@ -96,16 +96,4 @@ example: 2 x 20 GB `gp3` volumes = ~$3.50
 *   **Auto-Scaling**: The EKS node group is configured to scale between 1 (`min_size`) and 4 (`max_size`) nodes. The estimate above is based on the `desired_capacity` of 2 nodes. Costs will increase if the cluster scales up.
 *   **Data Transfer**: Costs for data transfer out to the internet are variable and can be a significant factor depending on the application's workload.
 *   **Savings Plans**: EC2 costs can be significantly reduced by using AWS Savings Plans.
-
-Please review the AWS Pricing page for detailed information and use the AWS Cost Explorer to monitor your expenses.
-
-
-| Service                    | Configuration                          | Estimated Monthly Cost (USD) |
-| :------------------------- | :------------------------------------- | :--------------------------- |
-| **Amazon EKS**             | 1 Cluster Control Plane                | ~$73.00                      |
-| **Amazon EC2**             | 2 x `t3.medium` instances (worker nodes) | ~$71.50                      |
-| **NAT Gateway**            | 1 x NAT Gateway (hourly charge)        | ~$40.00                      |
-| **Amazon EBS**             | 2 x 20 GB `gp3` volumes                | ~$3.50                       |
-| **Data Transfer & Other**  | NAT Processing, S3, ECR (low usage)    | ~$5.00 - $20.00+             |
-| **Total Estimated Cost**   |                                        | **~$193.00 - $208.00**       |
-
+*   **Total Cost**: Estimated Monthly Cost (including 18% GST): $191.75
