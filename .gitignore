@@ -1,0 +1,19 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfplan
+.terraform/
+
+# Terraform variable files with secrets
+*.tfvars
+
+# Local config files
+local-setup.tf
+
+# IDE / OS files
+*.swp
+*~
+.DS_Store
+
+# Large binaries
+kubectl
