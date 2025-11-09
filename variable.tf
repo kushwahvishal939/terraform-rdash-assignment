@@ -76,11 +76,11 @@ variable "docker_path" {
 }
 
 variable "cluster_name" {
-  type    = string
+  type = string
 }
 
 variable "node_instance_type" {
-  type    = string
+  type = string
 }
 variable "desired_capacity" {
   type    = number

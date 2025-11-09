@@ -1,9 +1,9 @@
 module "vpc" {
   source = "./modules/vpc"
 
-  project_name = var.project_name
-  aws_region   = var.aws_region
-  cluster_name = var.cluster_name
+  project_name          = var.project_name
+  aws_region            = var.aws_region
+  cluster_name          = var.cluster_name
   availability_zones    = data.aws_availability_zones.available.names
   vpc_cidr              = var.vpc_cidr
   public_subnet_cidrs   = var.public_subnet_cidrs
@@ -54,13 +54,20 @@ module "eks" {
   eks_admin_users    = var.eks_admin_users
 }
 
+module "s3" {
+  source            = "./modules/storage"
+  bucket_name       = var.bucket_name
+  project_name      = var.project_name
+  enable_versioning = true
+}
+
 module "rbac-test" {
   source               = "./modules/rbac-test"
   namespace_a          = "rbac-a"
   namespace_b          = "rbac-b"
   service_account_name = "rbac-test-sa"
-  cluster_name         = module.eks.cluster_name # Add explicit dependency
-  node_group_arn       = module.eks.node_group_arn # Add stronger dependency
+  cluster_name         = module.eks.cluster_name
+  node_group_arn       = module.eks.node_group_arn
   iam_role_arn         = module.iam_for_sa.iam_role_arn
   ecr_repo_url         = module.ecr.repository_url
   app_image_tag        = var.app_image_tag

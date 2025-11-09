@@ -1,67 +1,9 @@
-# Cloud Infrastructure and Kubernetes RBAC Assignment
-
-This project provisions a complete cloud infrastructure on AWS using Terraform and deploys a Kubernetes cluster (EKS) with specific RBAC and cloud identity configurations.
-
-## Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-- [Prerequisites](#prerequisites)
-- [Directory Structure](#directory-structure)
-- [Configuration](#configuration)
-- [Deployment Steps](#deployment-steps)
-- [Validation](#validation)
-  - [Deploy Test Pod](#1-deploy-test-pod)
-  - [Test RBAC Permissions](#2-test-rbac-permissions)
-  - [Test Storage Access](#3-test-storage-access)
-- [Cleanup](#cleanup)
-- [Estimated Costs](#estimated-costs)
-
-## Architecture Overview
-
-The infrastructure consists of the following components:
-- **VPC**: A custom Virtual Private Cloud with public, private, database, and cache subnets spread across two Availability Zones for high availability.
-- **Networking**: An Internet Gateway for public subnets and NAT Gateways for private subnets to allow outbound internet access.
-- **EKS Cluster**: A managed Kubernetes cluster with its control plane publicly accessible and worker nodes running securely in private subnets.
-- **S3 Bucket**: A private S3 bucket for application storage.
-- **IAM & RBAC**:
-  - An IAM Role for Service Accounts (IRSA) is configured to grant a specific Kubernetes service account (`rbac-test-sa`) secure access to the S3 bucket.
-  - Kubernetes RBAC policies are set up to enforce least-privilege access for the `rbac-test-sa` account across different namespaces.
-- **ECR**: An Elastic Container Registry to store the custom Docker image for the test pod.
-
-## Prerequisites
-
-Ensure you have the following tools installed and configured:
-
-- **Terraform**: `v1.0.0` or newer
-- **AWS CLI**: `v2.x` or newer, configured with administrator access credentials.
-- **kubectl**: `v1.24` or newer
-- **Docker**: `v20.x` or newer
-
-## Directory Structure
-
-```
-├── kubernetes-manifests/ # K8s manifests for RBAC and testing
-├── modules/              # Reusable Terraform modules
-│   ├── eks/
-│   ├── iam/
-│   ├── storage/
-│   └── vpc/
-├── docker/               # Dockerfile for the test pod image
-│   └── Dockerfile
-├── main.tf               # Root module configuration
-├── output.tf             # Root module outputs
-├── provider.tf           # Terraform provider configuration
-├── variable.tf           # Root module variable definitions
-├── prod.tfvars           # Example configuration values (DO NOT COMMIT SENSITIVE DATA)
-└── README.md             # This file
-```
-
 ## Configuration
 
 1.  **Clone the repository:**
     ```sh
-    git clone <your-repo-url>
-    cd <your-repo-name>
+    git clone https://github.com/kushwahvishal939/terraform-rdash-assignment.git
+    cd terraform-rdash-assignment
     ```
 
 2.  **Configure AWS Credentials:**
@@ -69,9 +11,44 @@ Ensure you have the following tools installed and configured:
     ```sh
     aws configure
     ```
-
 3.  **Prepare Terraform Variables:**
     The file `prod.tfvars` contains the configuration for the infrastructure. Review and adjust the values as needed. You can rename this file or create a new one (e.g., `dev.tfvars`).
+```sh 
+project_name          = "values"
+vpc_cidr              = "values"
+aws_region            = "values"
+availability_zones    = "values"
+public_subnet_cidrs   = "values"
+private_subnet_cidrs  = "values"
+database_subnet_cidrs = "values"
+cache_subnet_cidrs    = "values"
+# Storage configuration
+bucket_name       = "values"
+enable_versioning = "values"
+
+# ECR configuration
+ecr_repo_name = "values"
+environment   = "values"
+docker_path   = "dockerfile build docker_path"
+
+#EKS
+cluster_name       = "value"
+node_instance_type = "value"
+desired_capacity   = 3
+max_size           = 2
+min_size           = 1
+aws_account_id     = "aws_ids"
+repository_name    = "ECR repo name"
+app_image_tag      = "latest"
+docker_config_json = "cofig json path"
+eks_admin_users = [
+  {
+    username = "aws username"
+    userarn  = "arn:aws:iam::<account id>:user/user@exmaple.com"
+    groups   = ["system:masters"]
+  }
+]
+```
 
 ## Deployment Steps
 
@@ -79,26 +56,10 @@ Ensure you have the following tools installed and configured:
     ```sh
     terraform init
     ```
-
-2.  **Build and Push Docker Image:**
-    The test pod requires a Docker image with `kubectl` and `aws-cli`. The included `ecr` module will create a repository. You need to build and push the image to it.
-
-    *Note: You may need to run `terraform apply` once to create the ECR repository first, or manually create it.*
-
+2. **Plan the Deployment:**
     ```sh
-    # Login to AWS ECR
-    aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 715418180138.dkr.ecr.ap-south-1.amazonaws.com
-
-    # Build the Docker image
-    docker build -t tech-vishal-ecr-repo:latest docker/
-
-    # Tag the image for ECR
-    docker tag tech-vishal-ecr-repo:latest 715418180138.dkr.ecr.ap-south-1.amazonaws.com/tech-vishal-ecr-repo:latest
-
-    # Push the image to ECR
-    docker push 715418180138.dkr.ecr.ap-south-1.amazonaws.com/tech-vishal-ecr-repo:latest
+    terraform plan -var-file="prod.tfvars"
     ```
-    *(Replace the AWS Account ID, region, and repo name with your configuration)*
 
 3.  **Deploy Infrastructure:**
     Run `plan` to review the changes and `apply` to provision the resources.
@@ -106,72 +67,6 @@ Ensure you have the following tools installed and configured:
     terraform plan -var-file="prod.tfvars"
     terraform apply -var-file="prod.tfvars" --auto-approve
     ```
-
-4.  **Automatic `kubectl` Configuration:**
-    The Terraform setup includes a `local-setup.tf` file that automatically installs `kubectl` (if not present) and configures the `~/.kube/config` file to connect to the new EKS cluster.
-
-    After `terraform apply` completes, you can immediately start using `kubectl`. Verify the connection:
-    ```sh
-    kubectl get nodes
-    ```
-
-## Validation
-
-Follow these steps to verify that all RBAC and storage permissions are working as expected.
-
-### 1. Deploy Test Pod
-
-The test pod `rbac-test-pod` is automatically deployed by Terraform. You can verify that it is running:
-
-kubectl get pod rbac-test-pod
-
-### 2. Test RBAC Permissions
-
-Get a shell inside the running test pod:
-```sh
-kubectl exec -it rbac-test-pod -- /bin/bash
-```
-
-Now, run the following commands from *inside the pod's shell* and check the output.
-
-| Command                               | Expected Result                                     | Reason                               |
-| ------------------------------------- | --------------------------------------------------- | ------------------------------------ |
-| `kubectl get namespaces`              | **Success** (Lists all namespaces)                  | Cluster-wide list permission.        |
-| `kubectl get pods -n default`         | **Failure** (Error from server: forbidden)          | No access to `default` namespace.    |
-| `kubectl get pods -n kube-system`     | **Failure** (Error from server: forbidden)          | No access to `kube-system` namespace.|
-| `kubectl get pods -n rbac-a`          | **Success** (No resources found or lists pods)      | Read-only access to `rbac-a`.        |
-| `kubectl create deployment nginx --image=nginx -n rbac-a` | **Failure** (Error from server: forbidden) | Read-only access, cannot create.     |
-| `kubectl get pods -n rbac-b`          | **Success** (No resources found or lists pods)      | Full access to `rbac-b`.             |
-| `kubectl create deployment nginx --image=nginx -n rbac-b` | **Success** (`deployment.apps/nginx created`) | Full access, can create.             |
-| `kubectl delete deployment nginx -n rbac-b` | **Success** (`deployment.apps "nginx" deleted`) | Full access, can delete.             |
-
-### 3. Test Storage Access
-
-From *inside the pod's shell*, test read/write access to the S3 bucket.
-
-```sh
-# Replace 'your-bucket-name' with the bucket name from prod.tfvars
-BUCKET_NAME="production-terraform-state-vishal"
-
-# Create a test file
-echo "hello world" > test.txt
-
-# Upload the file to S3 (should succeed)
-aws s3 cp test.txt s3://${BUCKET_NAME}/test.txt
-# Expected output: upload: ./test.txt to s3://<bucket-name>/test.txt
-
-# Download the file from S3 (should succeed)
-aws s3 cp s3://${BUCKET_NAME}/test.txt downloaded.txt
-# Expected output: download: s3://<bucket-name>/test.txt to ./downloaded.txt
-
-# Verify content
-cat downloaded.txt
-# Expected output: hello world
-
-# Clean up the test files
-rm test.txt downloaded.txt
-aws s3 rm s3://${BUCKET_NAME}/test.txt
-```
 
 ## Cleanup
 
@@ -186,12 +81,31 @@ To destroy all the resources created by this project and avoid incurring further
 2.  **Delete ECR Image (Optional):**
     If you want to remove the Docker image from ECR, you can do so from the AWS Management Console or via the AWS CLI.
 
+
 ## Estimated Costs
 
 Running this infrastructure will incur costs on AWS. The primary cost drivers are:
 - **EKS Control Plane:** ~$0.10 per hour (~$73 per month).
-- **NAT Gateway:** ~$0.045 per hour per gateway + data processing charges. With 2 NAT Gateways, this is ~$65 per month plus data charges.
+- **NAT Gateway:** NAT Processing, S3, ECR (low usage) = ~$5.00 - $20.00+
 - **EC2 Worker Nodes:** Cost depends on the instance type (`t3.medium` by default) and the number of running nodes.
+exampl: 2 x `t3.medium` instances (worker nodes) = ~$71
+
 - **EBS Volumes:** Storage for the EC2 worker nodes.
+example: 2 x 20 GB `gp3` volumes = ~$3.50
+
+*   **Auto-Scaling**: The EKS node group is configured to scale between 1 (`min_size`) and 4 (`max_size`) nodes. The estimate above is based on the `desired_capacity` of 2 nodes. Costs will increase if the cluster scales up.
+*   **Data Transfer**: Costs for data transfer out to the internet are variable and can be a significant factor depending on the application's workload.
+*   **Savings Plans**: EC2 costs can be significantly reduced by using AWS Savings Plans.
 
 Please review the AWS Pricing page for detailed information and use the AWS Cost Explorer to monitor your expenses.
+
+
+| Service                    | Configuration                          | Estimated Monthly Cost (USD) |
+| :------------------------- | :------------------------------------- | :--------------------------- |
+| **Amazon EKS**             | 1 Cluster Control Plane                | ~$73.00                      |
+| **Amazon EC2**             | 2 x `t3.medium` instances (worker nodes) | ~$71.50                      |
+| **NAT Gateway**            | 1 x NAT Gateway (hourly charge)        | ~$40.00                      |
+| **Amazon EBS**             | 2 x 20 GB `gp3` volumes                | ~$3.50                       |
+| **Data Transfer & Other**  | NAT Processing, S3, ECR (low usage)    | ~$5.00 - $20.00+             |
+| **Total Estimated Cost**   |                                        | **~$193.00 - $208.00**       |
+

@@ -5,16 +5,6 @@ resource "aws_s3_bucket" "this" {
     Name    = var.bucket_name
     Project = var.project_name
   }
-
-  # lifecycle {
-  #   prevent_destroy = true
-
-  #   ignore_changes = [
-  #     tags,
-  #     versioning,
-  #     server_side_encryption_configuration
-  #   ]
-  # }
 }
 
 resource "aws_s3_bucket_versioning" "this" {
