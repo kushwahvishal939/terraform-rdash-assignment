@@ -65,17 +65,3 @@ module "rbac-test" {
   ecr_repo_url         = module.ecr.repository_url
   app_image_tag        = var.app_image_tag
 }
-
-# module "app_deployment" {
-#   source = "./modules/eks/kubernetes_deployment"
-
-#   app_name       = "nginx-app"
-#   replicas       = 2
-#   image          = "nginx:latest"
-#   container_port = 80
-#   service_port   = 80
-
-#   depends_on = [
-#     module.eks # Ensure EKS is ready before deploying
-#   ]
-# }
